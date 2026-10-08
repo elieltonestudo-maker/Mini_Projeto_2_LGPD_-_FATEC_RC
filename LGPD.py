@@ -3,6 +3,7 @@ from datetime import datetime
 
 import time
 from functools import wraps
+
 def medir_tempo(func):
     """Decorator que mede o tempo de execução de uma função."""
     @wraps(func)
@@ -32,9 +33,43 @@ usuarios = Table(
 
 metadata.create_all(engine)
 
+def anonimizar_nome(nome):
+    partes = nome.split()
+    nome_anonimo = []
+    for parte in partes:
+        if len(parte) > 1:
+            nome_anonimo.append(parte[0] + '*' * (len(parte) - 1))
+        else:
+            nome_anonimo.append(parte)
+    return ' '.join(nome_anonimo)
+
+def anonimizar_cpf(cpf):
+    return cpf[:3] + '.***.***-**'
+
+def anonimizar_email(email):
+    if '@' in email:
+        usuario, dominio = email.split('@')
+        if len(usuario) > 1:
+            return usuario[0] + '*' * (len(usuario) - 1) + '@' + dominio
+    return email
+
+def anonimizar_telefone(telefone):
+    digitos = ''.join(filter(str.isdigit, telefone))
+    return digitos[-4:]
+
 @medir_tempo
 def LGPD(row):
-    return row
+    id_, nome, cpf, email, telefone, data_nasc, created, updated = row
+    return (
+        id_,
+        anonimizar_nome(nome),
+        anonimizar_cpf(cpf),
+        anonimizar_email(email),
+        anonimizar_telefone(telefone),
+        data_nasc,
+        created,
+        updated
+    )
 
 users = []
 with engine.connect() as conn:
