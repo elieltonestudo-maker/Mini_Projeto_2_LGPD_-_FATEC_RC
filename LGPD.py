@@ -98,7 +98,19 @@ class Anonimizador:
 
         print("Arquivos gerados:", list(registros_por_ano.keys()))
 
+    @medir_tempo
+    def gerar_arquivo_todos(self):
+        with self.engine.connect() as conn:
+            result = conn.execute(text("SELECT nome, cpf FROM usuarios;"))
+            with open('todos.csv', 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['nome', 'cpf'])
+                for row in result:
+                    writer.writerow([row.nome, row.cpf])
+        print("Arquivo todos.csv gerado.")
+
 
 if __name__ == "__main__":
     anonimizador = Anonimizador("postgresql+psycopg2://alunos:AlunoFatec@200.19.224.150:5432/atividade2")
     anonimizador.gerar_arquivos_por_ano()
+    anonimizador.gerar_arquivo_todos()
