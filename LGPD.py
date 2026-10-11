@@ -3,6 +3,8 @@ from datetime import datetime
 
 import time
 from functools import wraps
+import csv
+import os
 
 def medir_tempo(func):
     """Decorator que mede o tempo de execução de uma função."""
@@ -71,12 +73,30 @@ def LGPD(row):
         updated
     )
 
-users = []
-with engine.connect() as conn:
-    result = conn.execute(text("SELECT * FROM usuarios LIMIT 5;"))
-    for row in result:
-        row = LGPD(row)
-        users.append(row)
+@medir_tempo
+def gerar_arquivos_por_ano():
+    if not os.path.exists('arquivos_gerados'):
+        os.makedirs('arquivos_gerados')
 
-for user in users:
-    print(user)
+    registros_por_ano = {}
+
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT * FROM usuarios;"))
+        for row in result:
+            row_anonimizada = LGPD(row)
+            ano = row.data_nascimento.year
+            if ano not in registros_por_ano:
+                registros_por_ano[ano] = []
+            registros_por_ano[ano].append(row_anonimizada)
+
+    for ano, registros in registros_por_ano.items():
+        nome_arquivo = f'arquivos_gerados/{ano}.csv'
+        with open(nome_arquivo, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['id', 'nome', 'cpf', 'email', 'telefone', 'data_nascimento', 'created_on', 'updated_on'])
+            writer.writerows(registros)
+
+    print("Arquivos gerados:", list(registros_por_ano.keys()))
+
+if __name__ == "__main__":
+    gerar_arquivos_por_ano()
