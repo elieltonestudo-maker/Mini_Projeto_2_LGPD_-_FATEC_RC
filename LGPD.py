@@ -107,6 +107,8 @@ class Anonimizador:
                 writer.writerows(registros)
 
         print("Arquivos gerados:", list(registros_por_ano.keys()))
+        caminho = os.path.abspath('arquivos_gerados')
+        print(f"Arquivos salvos em: {caminho}")
 
     @medir_tempo
     def gerar_arquivo_todos(self):
@@ -118,9 +120,77 @@ class Anonimizador:
                 for row in result:
                     writer.writerow([row.nome, row.cpf])
         print("Arquivo todos.csv gerado.")
+        caminho = os.path.abspath('todos.csv')
+        print(f"Arquivo salvo em: {caminho}")
+
+    @medir_tempo
+    def comparar_registros(self):
+        with self.engine.connect() as conn:
+            result = conn.execute(text("SELECT * FROM usuarios;"))
+            registros = []
+            for row in result:
+                original = tuple(row)
+                anonimizado = self.anonimizar_registro(row)
+                registros.append((original, anonimizado))
+
+        total = len(registros)
+        pagina = 10
+        inicio = 0
+
+        print(f"\nTotal de registros: {total}")
+        print("Comparativo ORIGINAL x ANONIMIZADO (10 por vez).")
+        print("Pressione ENTER para ver os proximos 10, ou 's' para sair.\n")
+
+        while inicio < total:
+            fim = min(inicio + pagina, total)
+            for i in range(inicio, fim):
+                original, anonimizado = registros[i]
+                print(f"[{i + 1}] ORIGINAL:    {original}")
+                print(f"    ANONIMIZADO: {anonimizado}")
+                print()
+
+            inicio = fim
+
+            if inicio >= total:
+                print("Fim dos registros.")
+                break
+
+            comando = input("ENTER para continuar, 's' para sair: ").strip().lower()
+            if comando == 's':
+                print("Exibicao interrompida.")
+                break
 
 
 if __name__ == "__main__":
     anonimizador = Anonimizador("postgresql+psycopg2://alunos:AlunoFatec@200.19.224.150:5432/atividade2")
-    anonimizador.gerar_arquivos_por_ano()
-    anonimizador.gerar_arquivo_todos()
+
+    print("\n===== MINI PROJETO 2 - LGPD =====")
+    print("Este programa executa as atividades 2 e 3 do projeto.")
+    print("Atividade 2: gera arquivos CSV por ano com dados anonimizados.")
+    print("Atividade 3: gera todos.csv com nome e CPF originais.")
+    print("As atividades sao independentes. Escolha qualquer ordem.\n")
+
+    while True:
+        print("\n===== MENU =====")
+        print("1 - Gerar arquivos por ano (Atividade 2)")
+        print("2 - Gerar arquivo todos.csv (Atividade 3)")
+        print("3 - Executar tudo")
+        print("4 - Comparar registros (original x anonimizado, 10 por vez)")
+        print("0 - Sair")
+
+        opcao = input("Escolha uma opcao: ")
+
+        if opcao == "1":
+            anonimizador.gerar_arquivos_por_ano()
+        elif opcao == "2":
+            anonimizador.gerar_arquivo_todos()
+        elif opcao == "3":
+            anonimizador.gerar_arquivos_por_ano()
+            anonimizador.gerar_arquivo_todos()
+        elif opcao == "4":
+            anonimizador.comparar_registros()
+        elif opcao == "0":
+            print("Encerrando...")
+            break
+        else:
+            print("Opcao invalida. Tente novamente.")
