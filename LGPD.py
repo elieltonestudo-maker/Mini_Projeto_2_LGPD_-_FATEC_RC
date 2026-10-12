@@ -5,6 +5,14 @@ import time
 from functools import wraps
 import csv
 import os
+import logging
+
+logging.basicConfig(
+    filename='execucao.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 def medir_tempo(func):
     """Decorator que mede o tempo de execução de uma função."""
@@ -14,7 +22,9 @@ def medir_tempo(func):
         resultado = func(*args, **kwargs)
         fim = time.perf_counter()     # tempo final
         duracao = fim - inicio
-        print(f"⏱ Função '{func.__name__}' executada em {duracao:.6f} segundos.")
+        mensagem = f"Função '{func.__name__}' executada em {duracao:.6f} segundos."
+        print(f"⏱ {mensagem}")
+        logging.info(mensagem)
         return resultado
     return wrapper
 
